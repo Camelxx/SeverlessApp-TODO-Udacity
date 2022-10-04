@@ -3,15 +3,17 @@ import { DocumentClient } from "aws-sdk/clients/dynamodb";
 import { Types } from 'aws-sdk/clients/s3';
 import { TodoItem } from "../models/TodoItem";
 import { TodoUpdate } from "../models/TodoUpdate";
+import { createLogger } from '../utils/logger'
 
-//const XAWS = AWSXRAY.captureAWS(AWS)
+const AWSXRay = require('aws-xray-sdk');
+const XAWS = AWSXRay.captureAWS(AWS);
 
-//const docClient = new XAWS.DynamoDB.DocumentClient()
+const logger = createLogger('TodosAccess')
 
 export class ToDoAccess {
 
     constructor(
-        private readonly docClient: DocumentClient = new AWS.DynamoDB.DocumentClient(),
+        private readonly docClient: DocumentClient = new XAWS.DynamoDB.DocumentClient(),
         private readonly s3Client: Types = new AWS.S3({ signatureVersion: 'v4' }),
         private readonly todoTable = process.env.TODOS_TABLE,
         private readonly s3BucketName = process.env.S3_BUCKET_NAME) {
@@ -49,6 +51,8 @@ export class ToDoAccess {
 
     try {                  
         console.log("Creating new todo");
+        logger.info("Creating new todo");
+
         const params = {
             TableName: this.todoTable,
             Item: todoItem,
@@ -67,7 +71,8 @@ export class ToDoAccess {
 
     try {
             
-        console.log("Updating todo");
+        console.log("update todoId:" +todoId+ " " +userId)
+        logger.info("update todoId:" +todoId+ " " +userId)
 
         const params = {
             TableName: this.todoTable,
@@ -103,7 +108,7 @@ export class ToDoAccess {
 
     try {                    
         console.log("Deleting todo");
-
+        logger.info("Deleting todoId:" +todoId+ " " +userId)
         const params = {
             TableName: this.todoTable,
             Key: {
@@ -126,7 +131,7 @@ export class ToDoAccess {
             
         
         console.log("Generating URL");
-
+        logger.info('Generating URL');
         const url = this.s3Client.getSignedUrl('putObject', {
             Bucket: this.s3BucketName,
             Key: todoId,
